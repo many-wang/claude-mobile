@@ -91,20 +91,20 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen bg-[#1a1a1a]">
       {/* 头部 */}
-      <div className="bg-white border-b px-4 py-3">
-        <h1 className="text-lg font-semibold text-center">Claude 随身助手</h1>
+      <div className="bg-[#2d2d2d] border-b border-[#3d3d3d] px-4 py-3">
+        <h1 className="text-lg font-semibold text-center text-[#e5e5e5]">Claude 随身助手</h1>
       </div>
 
       {/* 消息列表 */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 bg-gray-50">
+      <div className="flex-1 overflow-y-auto px-4 py-6 bg-[#1a1a1a]">
         <div className="max-w-3xl mx-auto space-y-6">
           {messages.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-4xl mb-4">💬</div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">开始对话</h2>
-              <p className="text-gray-600">在下方输入框发送消息，开始与 Claude 聊天</p>
+              <h2 className="text-xl font-semibold text-[#e5e5e5] mb-2">开始对话</h2>
+              <p className="text-[#999]">在下方输入框发送消息，开始与 Claude 聊天</p>
             </div>
           ) : (
             messages.map((msg) => (
@@ -115,14 +115,14 @@ export default function Home() {
                 <div
                   className={`max-w-[80%] rounded-lg px-4 py-3 ${
                     msg.role === 'user'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-white border border-gray-200 text-gray-900'
+                      ? 'bg-[#ff6b35] text-white'
+                      : 'bg-[#2d2d2d] border border-[#3d3d3d] text-[#e5e5e5]'
                   }`}
                 >
                   <div className="whitespace-pre-wrap break-words">{msg.content}</div>
                   <div
                     className={`text-xs mt-2 ${
-                      msg.role === 'user' ? 'text-indigo-200' : 'text-gray-500'
+                      msg.role === 'user' ? 'text-orange-200' : 'text-[#999]'
                     }`}
                   >
                     {new Date(msg.created_at).toLocaleTimeString('zh-CN')}
@@ -133,11 +133,11 @@ export default function Home() {
           )}
           {sending && (
             <div className="flex justify-start">
-              <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+              <div className="bg-[#2d2d2d] border border-[#3d3d3d] rounded-lg px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  <div className="w-2 h-2 bg-[#ff6b35] rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-[#ff6b35] rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-[#ff6b35] rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                 </div>
               </div>
             </div>
@@ -147,7 +147,7 @@ export default function Home() {
       </div>
 
       {/* 输入框 */}
-      <div className="bg-white border-t px-4 py-4">
+      <div className="bg-[#2d2d2d] border-t border-[#3d3d3d] px-4 py-4">
         <form onSubmit={handleSend} className="max-w-3xl mx-auto">
           <div className="flex gap-2">
             <textarea
@@ -160,14 +160,14 @@ export default function Home() {
                 }
               }}
               placeholder="输入消息... (Enter 发送，Shift+Enter 换行)"
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+              className="flex-1 px-4 py-3 bg-[#1a1a1a] border border-[#3d3d3d] text-[#e5e5e5] placeholder-[#666] rounded-lg focus:ring-2 focus:ring-[#ff6b35] focus:border-transparent resize-none"
               rows="3"
               disabled={sending || isInitializing}
             />
             <button
               type="submit"
               disabled={!input.trim() || sending || isInitializing}
-              className="px-6 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+              className="px-6 bg-[#ff6b35] text-white rounded-lg hover:bg-[#ff8555] disabled:bg-[#3d3d3d] disabled:text-[#666] disabled:cursor-not-allowed transition"
             >
               {isInitializing ? '初始化...' : '发送'}
             </button>
