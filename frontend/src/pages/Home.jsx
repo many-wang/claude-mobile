@@ -103,15 +103,12 @@ export default function Home() {
           {messages.length === 0 ? (
             <div className="text-center py-12">
               <div className="mb-6 flex justify-center">
-                <svg className="w-20 h-20" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="60" cy="60" r="60" fill="url(#gradient)"/>
-                  <defs>
-                    <linearGradient id="gradient" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#ff6b35"/>
-                      <stop offset="100%" stopColor="#ff8c42"/>
-                    </linearGradient>
-                  </defs>
-                </svg>
+                <div className="text-[#ff6b35] font-mono text-2xl font-bold tracking-wider" style={{
+                  textShadow: '2px 2px 0 #2d2d2d, 4px 4px 0 #1a1a1a',
+                  letterSpacing: '0.1em'
+                }}>
+                  CLAUDE<br/>CODE
+                </div>
               </div>
               <h2 className="text-xl font-semibold text-[#ff6b35] mb-2">开始对话</h2>
               <p className="text-[#999]">在下方输入框发送消息，开始与 Claude 聊天</p>
