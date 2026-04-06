@@ -1,13 +1,16 @@
 import axios from 'axios';
 
-// 自动检测环境，如果是通过 IP 访问则使用 IP 地址的后端
 const getApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
   const hostname = window.location.hostname;
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return '/api'; // 本地开发使用代理
-  } else {
-    return `http://${hostname}:3000/api`; // 远程访问直接连接后端
+    return '/api';
   }
+
+  return `http://${hostname}:3000/api`;
 };
 
 const API_URL = getApiUrl();
