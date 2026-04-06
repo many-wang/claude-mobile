@@ -7,10 +7,10 @@ const client = new Anthropic({
 
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022';
 
-async function sendMessage(messages) {
+async function sendMessage(messages, model) {
   try {
     const response = await client.messages.create({
-      model: MODEL,
+      model: model || MODEL,
       max_tokens: 4096,
       messages,
     });

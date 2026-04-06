@@ -4,6 +4,7 @@ import { sendMessage, createConversation, getProjects } from '../api'
 export default function Home() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
+  const [model, setModel] = useState(localStorage.getItem('anthropic_model') || 'claude-3-5-sonnet')
   const [sending, setSending] = useState(false)
   const [conversationId, setConversationId] = useState(null)
   const [isInitializing, setIsInitializing] = useState(false)
@@ -72,8 +73,8 @@ export default function Home() {
     setMessages(prev => [...prev, tempUserMsg])
 
     try {
-      const res = await sendMessage(currentConvId, userMessage)
-      // 替换临时消息并添加助手回复
+      const res = await sendMessage(currentConvId, userMessage, model)
+      localStorage.setItem('anthropic_model', model)
       setMessages(prev => [
         ...prev.filter(m => m.id !== tempUserMsg.id),
         res.data.userMessage,
@@ -156,6 +157,15 @@ export default function Home() {
       {/* 输入框 */}
       <div className="bg-[#2d2d2d] border-t border-[#3d3d3d] px-4 py-4">
         <form onSubmit={handleSend} className="max-w-3xl mx-auto">
+          <div className="mb-3">
+            <input
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              placeholder="模型名，如 claude-3-5-haiku"
+              className="w-full px-4 py-2 bg-[#1a1a1a] border border-[#3d3d3d] text-[#e5e5e5] placeholder-[#666] rounded-lg focus:ring-2 focus:ring-[#ff6b35] focus:border-transparent"
+              disabled={sending || isInitializing}
+            />
+          </div>
           <div className="flex gap-2">
             <textarea
               value={input}

@@ -57,7 +57,7 @@ router.get('/conversations/:id', async (req, res) => {
 router.post('/conversations/:id/messages', async (req, res) => {
   try {
     const { id } = req.params;
-    const { content } = req.body;
+    const { content, model } = req.body;
 
     if (!content) {
       return res.status(400).json({ error: '消息内容不能为空' });
@@ -91,7 +91,7 @@ router.post('/conversations/:id/messages', async (req, res) => {
     );
 
     // 调用 Claude API
-    const assistantContent = await sendMessage(history);
+    const assistantContent = await sendMessage(history, model);
 
     // 保存 Claude 回复
     const assistantResult = await dbRun(
