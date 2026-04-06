@@ -94,7 +94,7 @@ export default function Home() {
     <div className="flex flex-col h-screen bg-[#1a1a1a]">
       {/* 头部 */}
       <div className="bg-[#2d2d2d] border-b border-[#3d3d3d] px-4 py-3">
-        <h1 className="text-lg font-semibold text-center text-[#e5e5e5]">Claude 随身助手</h1>
+        <h1 className="text-lg font-semibold text-center text-[#ff6b35]">Claude 随身助手</h1>
       </div>
 
       {/* 消息列表 */}
@@ -102,12 +102,12 @@ export default function Home() {
         <div className="max-w-3xl mx-auto space-y-6">
           {messages.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-5xl mb-4">
-                <svg className="w-16 h-16 mx-auto text-[#ff6b35]" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-                </svg>
+              <div className="mb-6 flex justify-center">
+                <div className="w-20 h-20 rounded-full bg-[#2d2d2d] border-2 border-[#ff6b35] flex items-center justify-center">
+                  <span className="text-4xl font-bold text-[#ff6b35]">C</span>
+                </div>
               </div>
-              <h2 className="text-xl font-semibold text-[#e5e5e5] mb-2">开始对话</h2>
+              <h2 className="text-xl font-semibold text-[#ff6b35] mb-2">开始对话</h2>
               <p className="text-[#999]">在下方输入框发送消息，开始与 Claude 聊天</p>
             </div>
           ) : (
