@@ -10,7 +10,7 @@ const getApiUrl = () => {
     return '/api';
   }
 
-  return `http://${hostname}:3000/api`;
+  return 'https://claude-mobile-production-2a5d.up.railway.app/api';
 };
 
 const API_URL = getApiUrl();
