@@ -29,9 +29,19 @@ const getTextFromResponse = (response) => {
     return '';
   }
 
-  return response.content
+  const text = response.content
     .filter((block) => block?.type === 'text' && block.text)
     .map((block) => block.text)
+    .join('\n')
+    .trim();
+
+  if (text) {
+    return text;
+  }
+
+  return response.content
+    .filter((block) => block?.type === 'thinking' && block.thinking)
+    .map((block) => block.thinking)
     .join('\n')
     .trim();
 };
@@ -51,7 +61,7 @@ const buildEmptyResponseError = (response) => {
     .join(', ');
 
   if (contentTypes) {
-    return `AI 返回了非文本内容：${contentTypes}`;
+    return `AI 返回了无法展示的内容：${contentTypes}`;
   }
 
   return 'AI 返回了空内容';
