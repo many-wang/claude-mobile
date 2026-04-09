@@ -24,16 +24,16 @@ export default function Home() {
 
     try {
       // 获取默认项目
-      const projectsRes = await getProjects()
-      const defaultProject = projectsRes.data.projects.find(p => p.name === '未分类') || projectsRes.data.projects[0]
+      const projectsData = await getProjects()
+      const defaultProject = projectsData.projects.find(p => p.name === '未分类') || projectsData.projects[0]
 
       // 创建对话
-      const res = await createConversation({
+      const conversationData = await createConversation({
         project_id: defaultProject?.id,
         title: `对话 ${new Date().toLocaleString('zh-CN')}`
       })
-      setConversationId(res.data.conversation.id)
-      return res.data.conversation.id
+      setConversationId(conversationData.conversation.id)
+      return conversationData.conversation.id
     } catch (error) {
       console.error('初始化对话失败:', error)
       const errorMsg = error.response?.data?.error || error.message || '未知错误'
@@ -73,12 +73,12 @@ export default function Home() {
     setMessages(prev => [...prev, tempUserMsg])
 
     try {
-      const res = await sendMessage(currentConvId, userMessage, model)
+      const data = await sendMessage(currentConvId, userMessage, model)
       localStorage.setItem('anthropic_model', model)
       setMessages(prev => [
         ...prev.filter(m => m.id !== tempUserMsg.id),
-        res.data.userMessage,
-        res.data.assistantMessage
+        data.userMessage,
+        data.assistantMessage
       ])
     } catch (error) {
       console.error('发送消息失败:', error)

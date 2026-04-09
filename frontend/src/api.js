@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const unwrap = (request) => request.then((response) => response.data);
+
 const getApiUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
@@ -20,22 +22,25 @@ const api = axios.create({
   timeout: 30000,
 });
 
-// 项目相关
-export const getProjects = () => api.get('/projects');
-export const createProject = (data) => api.post('/projects', data);
-export const deleteProject = (id) => api.delete(`/projects/${id}`);
+export const getProjects = () => unwrap(api.get('/projects'));
+export const createProject = (data) => unwrap(api.post('/projects', data));
+export const deleteProject = (id) => unwrap(api.delete(`/projects/${id}`));
 export const getProjectConversations = (projectId) =>
-  api.get(`/projects/${projectId}/conversations`);
+  unwrap(api.get(`/projects/${projectId}/conversations`));
 
-// 对话相关
-export const createConversation = (data) => api.post('/conversations', data);
-export const getConversation = (id) => api.get(`/conversations/${id}`);
+export const createConversation = (data) => unwrap(api.post('/conversations', data));
+export const getConversation = (id) => unwrap(api.get(`/conversations/${id}`));
 export const sendMessage = (conversationId, content, model) =>
-  api.post(`/conversations/${conversationId}/messages`, { content, model });
+  unwrap(api.post(`/conversations/${conversationId}/messages`, { content, model }));
 export const exportConversation = (id) =>
   api.get(`/conversations/${id}/export`, { responseType: 'blob' });
 
-// 搜索
-export const searchMessages = (query) => api.get(`/search?q=${encodeURIComponent(query)}`);
+export const searchMessages = (query, filters = {}) =>
+  unwrap(api.get('/search', {
+    params: {
+      q: query,
+      ...filters,
+    },
+  }));
 
 export default api;

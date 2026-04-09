@@ -8,9 +8,9 @@ router.get('/', async (req, res) => {
     const projects = await dbAll(
       'SELECT * FROM projects ORDER BY updated_at DESC'
     );
-    res.json({ projects });
+    res.success({ projects });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.fail(500, error.message);
   }
 });
 
@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
     const { name, description } = req.body;
 
     if (!name) {
-      return res.status(400).json({ error: '项目名称不能为空' });
+      return res.fail(400, '项目名称不能为空');
     }
 
     const result = await dbRun(
@@ -33,9 +33,9 @@ router.post('/', async (req, res) => {
       [result.id]
     );
 
-    res.json({ project });
+    res.success({ project });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.fail(500, error.message);
   }
 });
 
@@ -49,9 +49,9 @@ router.get('/:id/conversations', async (req, res) => {
       [id]
     );
 
-    res.json({ conversations });
+    res.success({ conversations });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.fail(500, error.message);
   }
 });
 
@@ -60,9 +60,9 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     await dbRun('DELETE FROM projects WHERE id = ?', [id]);
-    res.json({ success: true });
+    res.success();
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.fail(500, error.message);
   }
 });
 

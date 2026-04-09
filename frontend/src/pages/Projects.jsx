@@ -18,8 +18,8 @@ export default function Projects() {
 
   const loadProjects = async () => {
     try {
-      const res = await getProjects()
-      setProjects(res.data.projects)
+      const data = await getProjects()
+      setProjects(data.projects)
     } catch (error) {
       console.error('加载项目失败:', error)
     } finally {
@@ -65,8 +65,8 @@ export default function Projects() {
   const handleSelectProject = async (projectId) => {
     setSelectedProject(projectId)
     try {
-      const res = await getProjectConversations(projectId)
-      setConversations(res.data.conversations)
+      const data = await getProjectConversations(projectId)
+      setConversations(data.conversations)
     } catch (error) {
       console.error('加载对话失败:', error)
     }
