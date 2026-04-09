@@ -4,8 +4,8 @@ const { dbRun, dbGet, dbAll } = require('../db/database');
 const { sendMessage, generateSummary } = require('../services/claude');
 const { searchHistory } = require('../services/search');
 
-const RECENT_MESSAGE_LIMIT = 12;
-const SUMMARY_TRIGGER_COUNT = 8;
+const RECENT_MESSAGE_LIMIT = 6;
+const SUMMARY_TRIGGER_COUNT = 6;
 
 const getConversationOrFail = async (id, res) => {
   const conversation = await dbGet(
@@ -21,17 +21,26 @@ const getConversationOrFail = async (id, res) => {
   return conversation;
 };
 
+const truncateContent = (content, maxLen = 800) => {
+  if (!content || content.length <= maxLen) return content;
+  return content.slice(0, maxLen) + '...';
+};
+
 const getRecentMessages = (messages) => {
-  return messages.slice(-RECENT_MESSAGE_LIMIT).map(({ role, content }) => ({ role, content }));
+  return messages.slice(-RECENT_MESSAGE_LIMIT).map(({ role, content }) => ({
+    role,
+    content: truncateContent(content),
+  }));
 };
 
 const buildSearchPrompt = (results) => {
   if (!results.length) return null;
 
   return results
-    .slice(0, 6)
+    .slice(0, 3)
     .map((item, index) => {
-      return `相关历史 ${index + 1}｜对话：${item.conversation_title}\n角色：${item.role}\n内容：${item.content}`;
+      const snippet = item.content.length > 200 ? item.content.slice(0, 200) + '...' : item.content;
+      return `相关历史 ${index + 1}｜${item.role}: ${snippet}`;
     })
     .join('\n\n');
 };

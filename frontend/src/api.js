@@ -19,7 +19,7 @@ const API_URL = getApiUrl();
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 30000,
+  timeout: 90000,
 });
 
 export const getProjects = () => unwrap(api.get('/projects'));
