@@ -29,19 +29,9 @@ const getTextFromResponse = (response) => {
     return '';
   }
 
-  const text = response.content
+  return response.content
     .filter((block) => block?.type === 'text' && block.text)
     .map((block) => block.text)
-    .join('\n')
-    .trim();
-
-  if (text) {
-    return text;
-  }
-
-  return response.content
-    .filter((block) => block?.type === 'thinking' && block.thinking)
-    .map((block) => block.thinking)
     .join('\n')
     .trim();
 };
@@ -59,6 +49,10 @@ const buildEmptyResponseError = (response) => {
     .map((block) => block?.type)
     .filter(Boolean)
     .join(', ');
+
+  if (contentTypes.includes('thinking') && !contentTypes.includes('text')) {
+    return '当前代理只返回了 thinking 内容，没有返回可展示的正式答案';
+  }
 
   if (contentTypes) {
     return `AI 返回了无法展示的内容：${contentTypes}`;
