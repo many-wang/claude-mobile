@@ -13,6 +13,77 @@ const MODEL_CANDIDATES = (() => {
   return [process.env.ANTHROPIC_MODEL || 'claude-opus-4-6'];
 })();
 
+console.log('候选模型列表:', MODEL_CANDIDATES);
+
+// --- Adaptive model ordering ---
+const modelStats = new Map();
+const BASE_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
+const MAX_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
+
+const getStats = (model) => {
+  if (!modelStats.has(model)) {
+    modelStats.set(model, { lastSuccess: null, lastFailure: null, consecutiveFailures: 0 });
+  }
+  return modelStats.get(model);
+};
+
+const recordSuccess = (model) => {
+  const stats = getStats(model);
+  stats.lastSuccess = Date.now();
+  stats.lastFailure = null;
+  stats.consecutiveFailures = 0;
+};
+
+const recordFailure = (model) => {
+  const stats = getStats(model);
+  stats.lastFailure = Date.now();
+  stats.consecutiveFailures += 1;
+};
+
+const getCooldownMs = (consecutiveFailures) => {
+  return Math.min(BASE_COOLDOWN_MS * Math.pow(2, consecutiveFailures - 1), MAX_COOLDOWN_MS);
+};
+
+const getModelTier = (model) => {
+  const stats = getStats(model);
+  const now = Date.now();
+
+  // Tier 1: recently succeeded, no failure after that success
+  if (stats.lastSuccess && !stats.lastFailure) {
+    return { tier: 1, sortKey: -stats.lastSuccess };
+  }
+
+  // Tier 3 or recovered: has recent failure
+  if (stats.lastFailure && stats.consecutiveFailures > 0) {
+    const cooldown = getCooldownMs(stats.consecutiveFailures);
+    if (now - stats.lastFailure < cooldown) {
+      // Still in cooldown → tier 3
+      return { tier: 3, sortKey: stats.consecutiveFailures };
+    }
+    // Cooldown expired → back to tier 2
+    return { tier: 2, sortKey: 0 };
+  }
+
+  // Tier 2: untested
+  return { tier: 2, sortKey: 0 };
+};
+
+const getOrderedCandidates = () => {
+  const withTier = MODEL_CANDIDATES.map((model, index) => ({
+    model,
+    originalIndex: index,
+    ...getModelTier(model),
+  }));
+
+  withTier.sort((a, b) => {
+    if (a.tier !== b.tier) return a.tier - b.tier;
+    if (a.tier === 2) return a.originalIndex - b.originalIndex; // preserve env var order for untested
+    return a.sortKey - b.sortKey;
+  });
+
+  return withTier.map((item) => item.model);
+};
+
 const isRetryableError = (error) => {
   const status = error?.status;
   if (status === 503 || status === 429) return true;
@@ -131,9 +202,13 @@ const buildEmptyResponseError = (response) => {
 };
 
 async function sendMessage(messages) {
+  const ordered = getOrderedCandidates();
+  console.log('候选模型顺序:', ordered);
+
   let lastError = null;
 
-  for (const model of MODEL_CANDIDATES) {
+  for (let i = 0; i < ordered.length; i++) {
+    const model = ordered[i];
     try {
       console.log(`尝试模型: ${model}`);
       const response = await createMessage(messages, 4096, model);
@@ -154,21 +229,25 @@ async function sendMessage(messages) {
         throw emptyResponseError;
       }
 
+      recordSuccess(model);
       return text;
     } catch (error) {
       lastError = error;
       console.error(`模型 ${model} 调用失败:`, error?.message || error);
 
-      if (MODEL_CANDIDATES.indexOf(model) < MODEL_CANDIDATES.length - 1 && isRetryableError(error)) {
-        console.log(`可重试错误，切换到下一个候选模型...`);
-        continue;
+      if (isRetryableError(error)) {
+        recordFailure(model);
+        if (i < ordered.length - 1) {
+          console.log(`可重试错误，切换到下一个候选模型...`);
+          continue;
+        }
       }
 
       break;
     }
   }
 
-  if (MODEL_CANDIDATES.length > 1 && isRetryableError(lastError)) {
+  if (ordered.length > 1 && isRetryableError(lastError)) {
     const busyError = new Error('当前代理通道繁忙，所有候选模型均不可用，请稍后重试');
     busyError.status = 503;
     throw busyError;
