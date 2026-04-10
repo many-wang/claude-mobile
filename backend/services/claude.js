@@ -3,6 +3,10 @@ const Anthropic = require('@anthropic-ai/sdk');
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
   baseURL: process.env.ANTHROPIC_BASE_URL,
+  defaultHeaders: {
+    'User-Agent': 'Claude-Code/1.0.18',
+    'anthropic-beta': 'interleaved-thinking-2025-05-14',
+  },
 });
 
 const MODEL_CANDIDATES = (() => {
