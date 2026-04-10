@@ -86,9 +86,9 @@ const getOrderedCandidates = () => {
 
 const isRetryableError = (error) => {
   const status = error?.status;
-  if (status === 503 || status === 429) return true;
+  if (status === 503 || status === 502 || status === 429) return true;
 
-  const message = getUpstreamErrorMessage(error).toLowerCase();
+  const message = `${getUpstreamErrorMessage(error)} ${error?.message || ''}`.toLowerCase();
   return (
     message.includes('no available channel') ||
     message.includes('model_not_found') ||
@@ -96,7 +96,10 @@ const isRetryableError = (error) => {
     message.includes('does not exist') ||
     message.includes('rate limit') ||
     message.includes('correct claude code client') ||
-    message.includes('parameters in your request appear to be incorrect')
+    message.includes('parameters in your request appear to be incorrect') ||
+    message.includes('只有 thinking') ||
+    message.includes('thinking，没有返回可展示的 text') ||
+    message.includes('no usable text')
   );
 };
 
