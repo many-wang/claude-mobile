@@ -118,7 +118,6 @@ export default function Home() {
               <div className="mb-6 flex justify-center">
                 <img src="/home-icon.webp" alt="Claude" className="w-24 h-24 rounded-2xl" />
               </div>
-              <h2 className="text-xl font-semibold text-[#ff6b35] mb-2">开始对话</h2>
               <p className="text-[#999]">在下方输入框发送消息，开始与 Claude 聊天</p>
             </div>
           ) : (
