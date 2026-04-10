@@ -162,7 +162,7 @@ const normalizeUpstreamError = (error) => {
 
 async function createMessage(messages, maxTokens = 16000, model) {
   const thinkingBudget = Math.max(1024, maxTokens - 4000);
-  return client.messages.create({
+  const stream = client.messages.stream({
     model: model || MODEL_CANDIDATES[0],
     max_tokens: maxTokens,
     thinking: {
@@ -171,6 +171,7 @@ async function createMessage(messages, maxTokens = 16000, model) {
     },
     messages: normalizeMessages(messages),
   });
+  return stream.finalMessage();
 }
 
 const getTextFromResponse = (response) => {
