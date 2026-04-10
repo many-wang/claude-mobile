@@ -4,10 +4,23 @@ import { sendMessage, createConversation, getProjects } from '../api'
 export default function Home() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
-  const [model, setModel] = useState(localStorage.getItem('anthropic_model') || 'claude-3-5-sonnet')
   const [sending, setSending] = useState(false)
   const [conversationId, setConversationId] = useState(null)
   const [isInitializing, setIsInitializing] = useState(false)
+
+  const getFriendlyErrorMessage = (error) => {
+    const message = error.response?.data?.error || error.message || '发送失败，请重试'
+
+    if (message.includes('通道繁忙') || message.includes('候选模型均不可用')) {
+      return '当前代理通道繁忙，请稍后重试。'
+    }
+
+    if (message.includes('对话过长') || message.includes('上下文过长') || message.includes('compact') || message.includes('clear')) {
+      return '当前对话上下文过长，建议新开一个对话。'
+    }
+
+    return message
+  }
   const messagesEndRef = useRef(null)
 
   useEffect(() => {
@@ -36,7 +49,7 @@ export default function Home() {
       return conversationData.conversation.id
     } catch (error) {
       console.error('初始化对话失败:', error)
-      const errorMsg = error.response?.data?.error || error.message || '未知错误'
+      const errorMsg = getFriendlyErrorMessage(error)
       alert('初始化失败: ' + errorMsg + '\n请检查后端服务是否正常运行')
       return null
     } finally {
@@ -73,8 +86,7 @@ export default function Home() {
     setMessages(prev => [...prev, tempUserMsg])
 
     try {
-      const data = await sendMessage(currentConvId, userMessage, model)
-      localStorage.setItem('anthropic_model', model)
+      const data = await sendMessage(currentConvId, userMessage)
       setMessages(prev => [
         ...prev.filter(m => m.id !== tempUserMsg.id),
         data.userMessage,
@@ -82,7 +94,7 @@ export default function Home() {
       ])
     } catch (error) {
       console.error('发送消息失败:', error)
-      alert('发送失败: ' + (error.response?.data?.error || error.message))
+      alert('发送失败: ' + getFriendlyErrorMessage(error))
       // 移除临时消息
       setMessages(prev => prev.filter(m => m.id !== tempUserMsg.id))
       setInput(userMessage)
@@ -157,15 +169,6 @@ export default function Home() {
       {/* 输入框 */}
       <div className="bg-[#2d2d2d] border-t border-[#3d3d3d] px-4 py-4">
         <form onSubmit={handleSend} className="max-w-3xl mx-auto">
-          <div className="mb-3">
-            <input
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              placeholder="模型名，如 claude-3-5-haiku"
-              className="w-full px-4 py-2 bg-[#1a1a1a] border border-[#3d3d3d] text-[#e5e5e5] placeholder-[#666] rounded-lg focus:ring-2 focus:ring-[#ff6b35] focus:border-transparent"
-              disabled={sending || isInitializing}
-            />
-          </div>
           <div className="flex gap-2">
             <textarea
               value={input}

@@ -71,7 +71,7 @@ const buildContextMessages = ({ recentMessages, summary, relatedHistory, current
   return contextMessages;
 };
 
-const updateConversationSummary = async (conversationId, model) => {
+const updateConversationSummary = async (conversationId) => {
   const messages = await dbAll(
     'SELECT role, content FROM messages WHERE conversation_id = ? ORDER BY created_at ASC',
     [conversationId]
@@ -81,7 +81,7 @@ const updateConversationSummary = async (conversationId, model) => {
     return null;
   }
 
-  const summary = await generateSummary(messages, model);
+  const summary = await generateSummary(messages);
   if (!summary) {
     return null;
   }
@@ -154,7 +154,7 @@ router.get('/conversations/:id', async (req, res) => {
 router.post('/conversations/:id/messages', async (req, res) => {
   try {
     const { id } = req.params;
-    const { content, model } = req.body;
+    const { content } = req.body;
 
     if (!content) {
       return res.fail(400, '消息内容不能为空');
@@ -164,8 +164,8 @@ router.post('/conversations/:id/messages', async (req, res) => {
     if (!conversation) return;
 
     const userResult = await dbRun(
-      'INSERT INTO messages (conversation_id, role, content, model) VALUES (?, ?, ?, ?)',
-      [id, 'user', content, model || null]
+      'INSERT INTO messages (conversation_id, role, content) VALUES (?, ?, ?)',
+      [id, 'user', content]
     );
 
     const userMessage = await dbGet(
@@ -200,15 +200,15 @@ router.post('/conversations/:id/messages', async (req, res) => {
       currentContent: content,
     });
 
-    const assistantContent = await sendMessage(promptMessages, { model });
+    const assistantContent = await sendMessage(promptMessages);
 
     if (!assistantContent) {
       throw new Error('AI 返回了空内容，未写入回复消息');
     }
 
     const assistantResult = await dbRun(
-      'INSERT INTO messages (conversation_id, role, content, model) VALUES (?, ?, ?, ?)',
-      [id, 'assistant', assistantContent, model || null]
+      'INSERT INTO messages (conversation_id, role, content) VALUES (?, ?, ?)',
+      [id, 'assistant', assistantContent]
     );
 
     const assistantMessage = await dbGet(
@@ -224,7 +224,7 @@ router.post('/conversations/:id/messages', async (req, res) => {
     let summary = summaryRow;
     const nextMessageCount = allMessages.length + 1;
     if (nextMessageCount >= SUMMARY_TRIGGER_COUNT && nextMessageCount % 4 === 0) {
-      const summaryText = await updateConversationSummary(id, model);
+      const summaryText = await updateConversationSummary(id);
       if (summaryText) {
         summary = { summary: summaryText };
       }
@@ -232,7 +232,7 @@ router.post('/conversations/:id/messages', async (req, res) => {
 
     res.success({ userMessage, assistantMessage, summary });
   } catch (error) {
-    res.fail(500, error.message);
+    res.fail(error.status || 500, error.message);
   }
 });
 

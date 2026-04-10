@@ -5,7 +5,27 @@ const client = new Anthropic({
   baseURL: process.env.ANTHROPIC_BASE_URL,
 });
 
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-4-6';
+const MODEL_CANDIDATES = (() => {
+  const candidatesEnv = process.env.ANTHROPIC_MODEL_CANDIDATES;
+  if (candidatesEnv) {
+    return candidatesEnv.split(',').map((m) => m.trim()).filter(Boolean);
+  }
+  return [process.env.ANTHROPIC_MODEL || 'claude-opus-4-6'];
+})();
+
+const isRetryableError = (error) => {
+  const status = error?.status;
+  if (status === 503 || status === 429) return true;
+
+  const message = getUpstreamErrorMessage(error).toLowerCase();
+  return (
+    message.includes('no available channel') ||
+    message.includes('model_not_found') ||
+    message.includes('model not found') ||
+    message.includes('does not exist') ||
+    message.includes('rate limit')
+  );
+};
 
 const normalizeMessages = (messages = []) => {
   return messages
@@ -16,9 +36,56 @@ const normalizeMessages = (messages = []) => {
     }));
 };
 
-async function createMessage(messages, model, maxTokens = 4096) {
+const extractJsonFromErrorMessage = (message = '') => {
+  const trimmed = String(message).trim();
+  const jsonStart = trimmed.indexOf('{');
+
+  if (jsonStart === -1) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(trimmed.slice(jsonStart));
+  } catch {
+    return null;
+  }
+};
+
+const getUpstreamErrorMessage = (error) => {
+  const payload = extractJsonFromErrorMessage(error?.message);
+  return payload?.error?.message || error?.error?.message || error?.message || '';
+};
+
+const normalizeUpstreamError = (error) => {
+  const upstreamMessage = getUpstreamErrorMessage(error);
+  const message = String(upstreamMessage || '').trim();
+
+  if (!message) {
+    const fallback = new Error('AI 服务暂时不可用，请稍后重试');
+    fallback.status = 502;
+    return fallback;
+  }
+
+  if (
+    message.includes('Some parameters in your request appear to be incorrect') ||
+    message.includes('上下文过长') ||
+    message.includes('compact') ||
+    message.includes('clear') ||
+    message.includes('correct Claude Code client')
+  ) {
+    const friendly = new Error('当前对话过长或参数不兼容，请新建对话后重试。');
+    friendly.status = 400;
+    return friendly;
+  }
+
+  const fallback = new Error(message);
+  fallback.status = error?.status || 502;
+  return fallback;
+};
+
+async function createMessage(messages, maxTokens = 4096, model) {
   return client.messages.create({
-    model: model || MODEL,
+    model: model || MODEL_CANDIDATES[0],
     max_tokens: maxTokens,
     messages: normalizeMessages(messages),
   });
@@ -51,7 +118,7 @@ const buildEmptyResponseError = (response) => {
     .join(', ');
 
   if (contentTypes.includes('thinking') && !contentTypes.includes('text')) {
-    return '当前代理只返回了 thinking 内容，没有返回可展示的正式答案';
+    return '上游响应只有 thinking，没有返回可展示的 text，通常是代理或模型兼容性问题';
   }
 
   if (contentTypes) {
@@ -61,23 +128,54 @@ const buildEmptyResponseError = (response) => {
   return 'AI 返回了空内容';
 };
 
-async function sendMessage(messages, options = {}) {
-  try {
-    const response = await createMessage(messages, options.model, 4096);
-    const text = getTextFromResponse(response);
+async function sendMessage(messages) {
+  let lastError = null;
 
-    if (!text) {
-      throw new Error(buildEmptyResponseError(response));
+  for (const model of MODEL_CANDIDATES) {
+    try {
+      console.log(`尝试模型: ${model}`);
+      const response = await createMessage(messages, 4096, model);
+      console.log('Claude upstream response:', JSON.stringify({
+        id: response?.id,
+        type: response?.type,
+        role: response?.role,
+        model: response?.model,
+        stop_reason: response?.stop_reason,
+        stop_sequence: response?.stop_sequence,
+        content: response?.content,
+      }, null, 2));
+      const text = getTextFromResponse(response);
+
+      if (!text) {
+        const emptyResponseError = new Error(buildEmptyResponseError(response));
+        emptyResponseError.status = 502;
+        throw emptyResponseError;
+      }
+
+      return text;
+    } catch (error) {
+      lastError = error;
+      console.error(`模型 ${model} 调用失败:`, error?.message || error);
+
+      if (MODEL_CANDIDATES.indexOf(model) < MODEL_CANDIDATES.length - 1 && isRetryableError(error)) {
+        console.log(`可重试错误，切换到下一个候选模型...`);
+        continue;
+      }
+
+      break;
     }
-
-    return text;
-  } catch (error) {
-    console.error('Claude API 调用失败:', error);
-    throw new Error(error?.message || 'AI 服务暂时不可用，请稍后重试');
   }
+
+  if (MODEL_CANDIDATES.length > 1 && isRetryableError(lastError)) {
+    const busyError = new Error('当前代理通道繁忙，所有候选模型均不可用，请稍后重试');
+    busyError.status = 503;
+    throw busyError;
+  }
+
+  throw normalizeUpstreamError(lastError);
 }
 
-async function generateSummary(messages, model) {
+async function generateSummary(messages) {
   try {
     const prompt = [
       {
@@ -88,7 +186,7 @@ async function generateSummary(messages, model) {
       },
     ];
 
-    const response = await createMessage(prompt, model, 800);
+    const response = await createMessage(prompt, 800);
     return getTextFromResponse(response) || null;
   } catch (error) {
     console.error('摘要生成失败:', error);

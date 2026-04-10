@@ -18,6 +18,20 @@ export default function Chat() {
   const messageRefs = useRef({})
   const messagesEndRef = useRef(null)
 
+  const getFriendlyErrorMessage = (error) => {
+    const message = error.response?.data?.error || error.message || '发送失败，请重试'
+
+    if (message.includes('通道繁忙') || message.includes('候选模型均不可用')) {
+      return '当前代理通道繁忙，请稍后重试。'
+    }
+
+    if (message.includes('对话过长') || message.includes('上下文过长') || message.includes('compact') || message.includes('clear')) {
+      return '当前对话上下文过长，建议新开一个对话。'
+    }
+
+    return message
+  }
+
   useEffect(() => {
     loadConversation()
   }, [id])
@@ -85,7 +99,7 @@ export default function Chat() {
       }
     } catch (error) {
       console.error('发送消息失败:', error)
-      alert(error.response?.data?.error || '发送失败，请重试')
+      alert(getFriendlyErrorMessage(error))
       setMessages(prev => prev.filter(m => m.id !== tempUserMsg.id))
       setInput(userMessage)
     } finally {

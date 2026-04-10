@@ -30,8 +30,8 @@ export const getProjectConversations = (projectId) =>
 
 export const createConversation = (data) => unwrap(api.post('/conversations', data));
 export const getConversation = (id) => unwrap(api.get(`/conversations/${id}`));
-export const sendMessage = (conversationId, content, model) =>
-  unwrap(api.post(`/conversations/${conversationId}/messages`, { content, model }));
+export const sendMessage = (conversationId, content) =>
+  unwrap(api.post(`/conversations/${conversationId}/messages`, { content }));
 export const exportConversation = (id) =>
   api.get(`/conversations/${id}/export`, { responseType: 'blob' });
 
