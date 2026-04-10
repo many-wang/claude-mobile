@@ -156,10 +156,15 @@ const normalizeUpstreamError = (error) => {
   return fallback;
 };
 
-async function createMessage(messages, maxTokens = 4096, model) {
+async function createMessage(messages, maxTokens = 16000, model) {
+  const thinkingBudget = Math.max(1024, maxTokens - 4000);
   return client.messages.create({
     model: model || MODEL_CANDIDATES[0],
     max_tokens: maxTokens,
+    thinking: {
+      type: 'enabled',
+      budget_tokens: thinkingBudget,
+    },
     messages: normalizeMessages(messages),
   });
 }
@@ -211,7 +216,7 @@ async function sendMessage(messages) {
     const model = ordered[i];
     try {
       console.log(`尝试模型: ${model}`);
-      const response = await createMessage(messages, 4096, model);
+      const response = await createMessage(messages, 16000, model);
       console.log('Claude upstream response:', JSON.stringify({
         id: response?.id,
         type: response?.type,
@@ -267,7 +272,7 @@ async function generateSummary(messages) {
       },
     ];
 
-    const response = await createMessage(prompt, 800);
+    const response = await createMessage(prompt, 5000);
     return getTextFromResponse(response) || null;
   } catch (error) {
     console.error('摘要生成失败:', error);
