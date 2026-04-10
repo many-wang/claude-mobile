@@ -23,7 +23,9 @@ const isRetryableError = (error) => {
     message.includes('model_not_found') ||
     message.includes('model not found') ||
     message.includes('does not exist') ||
-    message.includes('rate limit')
+    message.includes('rate limit') ||
+    message.includes('correct claude code client') ||
+    message.includes('parameters in your request appear to be incorrect')
   );
 };
 
